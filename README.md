@@ -1,34 +1,35 @@
 # Medical Telegram Warehouse
 
-An end-to-end data pipeline for Telegram data analytics, built for Kara Solutions.
-
 ## Project Overview
+This project builds a data pipeline for scraping and analyzing Ethiopian medical business data from Telegram channels.
 
-This project builds a robust data platform that generates actionable insights about Ethiopian medical businesses using data scraped from public Telegram channels.
+## Quick Start
 
-## Architecture
+### 1. Prerequisites
+- Python 3.9+
+- PostgreSQL
+- Telegram API credentials
 
-The pipeline follows a modern ELT approach:
+### 2. Setup
 
-1. **Extract & Load**: Scrape data from Telegram → Store in Data Lake
-2. **Transform**: Load to PostgreSQL → Transform with dbt → Star Schema
-3. **Enrich**: Object detection with YOLO on images
-4. **Serve**: Analytical API with FastAPI
-5. **Orchestrate**: Pipeline automation with Dagster
-
-## Project Structure
-medical-telegram-warehouse/
-├── data/ # Data lake storage
-├── medical_warehouse/ # dbt project
-├── src/ # Source code
-├── api/ # FastAPI application
-├── notebooks/ # Analysis notebooks
-├── tests/ # Test files
-└── scripts/ # Utility scripts
-
-## Setup Instructions
-
-1. Clone the repository:
 ```bash
-git clone 
+# Clone the repository
+git clone <repository-url>
 cd medical-telegram-warehouse
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your credentials
+
+# Start PostgreSQL with Docker
+docker-compose up -d postgres
+
+# Run the scraper
+python src/scraper.py
