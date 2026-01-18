@@ -623,7 +623,6 @@ def main():
         print("TELEGRAM_API_HASH=your_api_hash")
         print("TELEGRAM_PHONE=your_phone_number")
         sys.exit(1)
-
-
+        
 if __name__ == "__main__":
     main()   

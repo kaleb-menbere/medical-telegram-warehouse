@@ -46,6 +46,6 @@ async def test_connection():
         print("1. Check your API credentials in .env file")
         print("2. Make sure you have internet connection")
         print("3. If in restricted region, try VPN")
-
+   
 if __name__ == "__main__":
     asyncio.run(test_connection())

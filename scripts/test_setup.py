@@ -24,7 +24,7 @@ for package in required_packages:
         print(f"✗ {package} - NOT INSTALLED")
         all_installed = False
 
-print("=" * 50)  
+print("=" * 50)
 if all_installed:
     print("✅ All packages installed successfully!")
 else:

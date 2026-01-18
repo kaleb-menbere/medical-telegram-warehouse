@@ -187,6 +187,6 @@ def main():
     print("1. Review the collected data")
     print("2. Check logs/scraping_summary_*.json for detailed stats")
     print("3. Move to Task 2: Data Modeling and Transformation")
-
+     
 if __name__ == "__main__":
     main()
