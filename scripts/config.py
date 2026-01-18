@@ -140,7 +140,7 @@ def main():
         print("❌ Configuration needs attention")
         print("\nPlease fix the issues above before running the scraper.")
     print("="*60)
-
+ 
 
 if __name__ == "__main__":
     main()
