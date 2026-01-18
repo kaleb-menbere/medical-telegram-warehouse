@@ -32,4 +32,4 @@ cp .env.example .env
 docker-compose up -d postgres
 
 # Run the scraper
-python src/scraper.py
+python src/scraper.py 
