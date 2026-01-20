@@ -35,3 +35,10 @@ pytest-asyncio
  ultralytics 
  opencv-python 
  pillow
+
+
+ fastapi 
+ uvicorn 
+ sqlalchemy 
+ psycopg2-binary 
+ python-multipart
