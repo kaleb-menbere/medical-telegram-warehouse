@@ -42,3 +42,9 @@ pytest-asyncio
  sqlalchemy 
  psycopg2-binary 
  python-multipart
+
+ dagster 
+ dagster-webserver 
+ dagster-postgres 
+ pandas 
+ psycopg2-binary
