@@ -3,32 +3,43 @@ version: 2
 sources:
   - name: raw
     schema: raw
-    description: "Raw data from Telegram scraping"
-
     tables:
       - name: telegram_messages
-        description: "Raw Telegram messages"
+        description: "Raw Telegram messages scraped from channels"
         columns:
           - name: message_id
             description: "Unique identifier for each message"
-            tests:
-              - not_null
-              - unique
-
           - name: channel_name
-            description: "Telegram channel name"
-
+            description: "Name of the Telegram channel"
           - name: message_date
-            description: "Timestamp of the message"
-
+            description: "Timestamp when the message was posted"
           - name: message_text
-            description: "Message text"
-
+            description: "Content of the message"
           - name: has_media
-            description: "Whether the message has media"
-
+            description: "Whether the message contains media"
+          - name: image_path
+            description: "Path to downloaded image if present"
           - name: views
-            description: "Number of views"
-
+            description: "Number of views on the message"
           - name: forwards
-            description: "Number of forwards"
+            description: "Number of times the message was forwarded"
+          
+      - name: yolo_detections
+        description: "YOLO object detection results for Telegram images"
+        columns:
+          - name: message_id
+            description: "Message ID from Telegram"
+          - name: channel_name
+            description: "Name of the Telegram channel"
+          - name: image_path
+            description: "Path to the image file"
+          - name: detected_objects
+            description: "Comma-separated list of objects detected by YOLO"
+          - name: num_detections
+            description: "Number of objects detected"
+          - name: image_category
+            description: "Category based on detected objects (promotional, product_display, lifestyle, other)"
+          - name: confidence_score
+            description: "Confidence score of the detection"
+          - name: loaded_at
+            description: "When the detection was loaded into database"

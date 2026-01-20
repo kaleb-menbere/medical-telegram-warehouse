@@ -31,3 +31,7 @@ dagster-postgres
 # Testing
 pytest
 pytest-asyncio
+
+ ultralytics 
+ opencv-python 
+ pillow

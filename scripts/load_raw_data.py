@@ -1,104 +1,163 @@
-# scripts/load_raw_data.py
+# scripts/recreate_and_load.py
+import psycopg2
 import json
 import os
-import pandas as pd
-from sqlalchemy import create_engine, text
 from datetime import datetime
-import logging
 
-# Setup logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-def load_raw_data():
+def recreate_and_load():
+    conn = psycopg2.connect(
+        host="localhost",
+        database="telegram_warehouse",
+        user="postgres",
+        password="password"
+    )
+    
+    cursor = conn.cursor()
+    
+    # Create raw schema
+    cursor.execute("CREATE SCHEMA IF NOT EXISTS raw;")
+    
+    # Drop existing table if it exists
+    cursor.execute("DROP TABLE IF EXISTS raw.telegram_messages;")
+    
+    # Create table with correct schema based on your JSON structure
+    create_table_sql = """
+    CREATE TABLE raw.telegram_messages (
+        message_id BIGINT PRIMARY KEY,
+        channel_id BIGINT,
+        channel_username VARCHAR(255),
+        channel_name VARCHAR(255),
+        message_date TIMESTAMP,
+        message_text TEXT,
+        has_media BOOLEAN,
+        media_type VARCHAR(100),
+        image_path VARCHAR(500),
+        views INTEGER,
+        forwards INTEGER,
+        replies INTEGER,
+        edited BOOLEAN,
+        edit_date TIMESTAMP,
+        pinned BOOLEAN,
+        scraped_at TIMESTAMP,
+        scraping_session_id VARCHAR(100),
+        raw_data JSONB
+    );
     """
-    Load JSON files from data lake into PostgreSQL raw schema
-    """
-    # Database connection (use environment variables in production)
-    DB_HOST = os.getenv('DB_HOST', 'localhost')
-    DB_PORT = os.getenv('DB_PORT', '5432')
-    DB_NAME = os.getenv('DB_NAME', 'medical_warehouse')
-    DB_USER = os.getenv('DB_USER', 'postgres')
-    DB_PASSWORD = os.getenv('DB_PASSWORD', 'password')
+    cursor.execute(create_table_sql)
+    print("✅ Table created with correct schema")
     
-    # Create connection string
-    connection_string = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    # Now load data from JSON files
+    base_dir = "data/raw/telegram_messages"
+    total_messages = 0
     
-    # Data lake directory
-    data_lake_path = "data/raw/telegram_messages"
-    
-    try:
-        # Connect to PostgreSQL
-        engine = create_engine(connection_string)
-        
-        # Create raw schema if not exists
-        with engine.connect() as conn:
-            conn.execute(text("CREATE SCHEMA IF NOT EXISTS raw;"))
-            logger.info("Raw schema created/verified")
-        
-        # List all JSON files
-        json_files = []
-        for root, dirs, files in os.walk(data_lake_path):
-            for file in files:
-                if file.endswith('.json'):
-                    json_files.append(os.path.join(root, file))
-        
-        if not json_files:
-            logger.warning(f"No JSON files found in {data_lake_path}")
-            return
-        
-        logger.info(f"Found {len(json_files)} JSON files to load")
-        
-        # Read and combine all JSON files
-        all_data = []
-        for json_file in json_files:
-            try:
-                with open(json_file, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    # If data is a list of messages, extend; if single dict, append
-                    if isinstance(data, list):
-                        all_data.extend(data)
-                    else:
-                        all_data.append(data)
-            except Exception as e:
-                logger.error(f"Error reading {json_file}: {e}")
-        
-        if not all_data:
-            logger.warning("No data to load")
-            return
-        
-        # Convert to DataFrame
-        df = pd.json_normalize(all_data)
-        
-        # Ensure all required columns exist
-        expected_columns = ['message_id', 'channel_name', 'message_date', 
-                           'message_text', 'has_media', 'views', 'forwards']
-        
-        for col in expected_columns:
-            if col not in df.columns:
-                df[col] = None
-        
-        # Select only the columns we need
-        df = df[expected_columns + [col for col in df.columns if col not in expected_columns]]
-        
-        # Create table in PostgreSQL
-        df.to_sql('telegram_messages', engine, schema='raw', 
-                 if_exists='replace', index=False, method='multi')
-        
-        logger.info(f"Successfully loaded {len(df)} records to raw.telegram_messages")
-        
-        # Add indexes for better query performance
-        with engine.connect() as conn:
-            conn.execute(text("""
-                CREATE INDEX IF NOT EXISTS idx_message_id ON raw.telegram_messages(message_id);
-                CREATE INDEX IF NOT EXISTS idx_channel_name ON raw.telegram_messages(channel_name);
-                CREATE INDEX IF NOT EXISTS idx_message_date ON raw.telegram_messages(message_date);
-            """))
-            logger.info("Indexes created on raw table")
+    # Walk through all date directories
+    for date_dir in os.listdir(base_dir):
+        date_path = os.path.join(base_dir, date_dir)
+        if not os.path.isdir(date_path):
+            continue
             
-    except Exception as e:
-        logger.error(f"Error loading data: {e}")
-        raise
+        for json_file in os.listdir(date_path):
+            if json_file.endswith('.json'):
+                full_path = os.path.join(date_path, json_file)
+                print(f"📄 Loading {full_path}")
+                
+                try:
+                    with open(full_path, 'r', encoding='utf-8') as f:
+                        messages = json.load(f)
+                        
+                        if not isinstance(messages, list):
+                            print(f"⚠️  Skipping: Expected list, got {type(messages)}")
+                            continue
+                        
+                        for message in messages:
+                            # Use the exact field names from your JSON
+                            insert_sql = """
+                            INSERT INTO raw.telegram_messages 
+                            (message_id, channel_id, channel_username, channel_name, 
+                             message_date, message_text, has_media, media_type, image_path,
+                             views, forwards, replies, edited, edit_date, pinned,
+                             scraped_at, scraping_session_id, raw_data)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+                            """
+                            
+                            # Convert string dates to datetime objects
+                            message_date_str = message.get('message_date')
+                            edit_date_str = message.get('edit_date')
+                            scraped_at_str = message.get('scraped_at')
+                            
+                            try:
+                                message_date = datetime.fromisoformat(message_date_str.replace('Z', '+00:00')) if message_date_str else None
+                            except:
+                                message_date = None
+                                
+                            try:
+                                edit_date = datetime.fromisoformat(edit_date_str.replace('Z', '+00:00')) if edit_date_str else None
+                            except:
+                                edit_date = None
+                                
+                            try:
+                                scraped_at = datetime.fromisoformat(scraped_at_str.replace('Z', '+00:00')) if scraped_at_str else None
+                            except:
+                                scraped_at = None
+                            
+                            cursor.execute(insert_sql, (
+                                message.get('message_id'),
+                                message.get('channel_id'),
+                                message.get('channel_username'),
+                                message.get('channel_name'),
+                                message_date,
+                                message.get('message_text', ''),
+                                message.get('has_media', False),
+                                message.get('media_type', ''),
+                                message.get('image_path', ''),
+                                message.get('views', 0),
+                                message.get('forwards', 0),
+                                message.get('replies', 0),
+                                message.get('edited', False),
+                                edit_date,
+                                message.get('pinned', False),
+                                scraped_at,
+                                message.get('scraping_session_id'),
+                                json.dumps(message)
+                            ))
+                            total_messages += 1
+                            
+                except Exception as e:
+                    print(f"❌ Error: {e}")
+                    continue
+    
+    conn.commit()
+    
+    # Verify the load
+    cursor.execute("SELECT COUNT(*) FROM raw.telegram_messages;")
+    count = cursor.fetchone()[0]
+    
+    print(f"\n✅ Successfully loaded {count} messages")
+    
+    # Show some stats
+    cursor.execute("""
+        SELECT 
+            channel_name,
+            COUNT(*) as total_messages,
+            SUM(CASE WHEN has_media THEN 1 ELSE 0 END) as with_media,
+            AVG(views) as avg_views,
+            MIN(message_date) as first_post,
+            MAX(message_date) as last_post
+        FROM raw.telegram_messages
+        GROUP BY channel_name
+        ORDER BY total_messages DESC;
+    """)
+    
+    print("\n📊 Summary by Channel:")
+    for row in cursor.fetchall():
+        print(f"  {row[0]}:")
+        print(f"    Total messages: {row[1]}")
+        print(f"    With media: {row[2]}")
+        print(f"    Avg views: {row[3]:.0f}")
+        print(f"    Date range: {row[4]} to {row[5]}")
+    
+    cursor.close()
+    conn.close()
 
 if __name__ == "__main__":
-    load_raw_data()
+    recreate_and_load()

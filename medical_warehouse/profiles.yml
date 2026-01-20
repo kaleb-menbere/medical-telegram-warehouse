@@ -2,13 +2,11 @@ medical_warehouse:
   target: dev
   outputs:
     dev:
-      type: postgres
-      host: "{{ env_var('DB_HOST', 'localhost') }}"
-      port: "{{ env_var('DB_PORT', 5432) | int }}"
-      user: "{{ env_var('DB_USER', 'postgres') }}"
-      pass: "{{ env_var('DB_PASSWORD', 'password') }}"
-      dbname: "{{ env_var('DB_NAME', 'medical_warehouse') }}"
-      schema: "{{ env_var('DB_SCHEMA', 'dbt_transform') }}"
-      threads: 4
-      keepalives_idle: 0
-      sslmode: disable
+      type: postgres  # Change from 'sqlite' to 'postgres'
+      host: localhost
+      user: postgres
+      pass: "password"  # Your PostgreSQL password
+      port: 5432
+      dbname: telegram_warehouse
+      schema: medical_warehouse
+      threads: 1

@@ -1,73 +1,44 @@
 version: 2
 
 models:
-  - name: stg_telegram_channels
-    description: "Staging model for Telegram channels data"
+  - name: stg_telegram_messages
+    description: "Cleaned and standardized Telegram messages"
     columns:
-      - name: channel_id
-        description: "Unique identifier for the Telegram channel"
+      - name: message_id
+        description: "Unique identifier for each message"
         tests:
           - not_null
           - unique
-      - name: channel_username
-        description: "Username of the Telegram channel (without @)"
       - name: channel_name
-        description: "Display name of the Telegram channel"
-      - name: description
-        description: "Channel description"
-      - name: participants_count
-        description: "Number of participants/subscribers"
-      - name: date_created
-        description: "Date when the channel was created"
-      - name: scraped_at
-        description: "When the channel info was scraped"
-      - name: is_verified
-        description: "Whether the channel is verified by Telegram"
-      - name: is_scam
-        description: "Whether the channel is marked as scam"
-      - name: total_messages
-        description: "Total messages in the channel (estimated)"
-      - name: loaded_at
-        description: "When the record was loaded to the data warehouse"
-
-  - name: stg_telegram_messages
-    description: "Staging model for Telegram messages data"
-    columns:
-      - name: message_id
-        description: "Unique identifier for the message within the channel"
-        tests:
-          - not_null
-      - name: channel_id
-        description: "ID of the channel this message belongs to"
-        tests:
-          - not_null
-      - name: channel_username
-        description: "Username of the channel"
-      - name: channel_name
-        description: "Display name of the channel"
-      - name: message_date
-        description: "Date and time when the message was posted"
+        description: "Name of the Telegram channel"
+      - name: post_timestamp
+        description: "Timestamp when the message was posted"
         tests:
           - not_null
       - name: message_text
-        description: "Text content of the message"
+        description: "Content of the message"
       - name: has_media
         description: "Whether the message contains media"
-      - name: media_type
-        description: "Type of media in the message"
-      - name: image_path
-        description: "Path to downloaded image (if any)"
-      - name: views
+      - name: view_count
         description: "Number of views on the message"
-      - name: forwards
+        tests:
+          - not_null
+      - name: forward_count
         description: "Number of times the message was forwarded"
-      - name: replies
-        description: "Number of replies to the message"
-      - name: edited
-        description: "Whether the message was edited"
-      - name: pinned
-        description: "Whether the message is pinned"
-      - name: scraped_at
-        description: "When the message was scraped"
-      - name: loaded_at
-        description: "When the record was loaded to the data warehouse"
+
+  - name: stg_telegram_channels
+    description: "Channel statistics and information"
+    columns:
+      - name: channel_key
+        description: "Surrogate key for channel dimension"
+        tests:
+          - not_null
+          - unique
+      - name: channel_name
+        description: "Name of the Telegram channel"
+        tests:
+          - not_null
+      - name: total_posts
+        description: "Total number of posts from this channel"
+        tests:
+          - not_null

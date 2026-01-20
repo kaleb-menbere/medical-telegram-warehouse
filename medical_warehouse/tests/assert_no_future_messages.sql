@@ -1,7 +1,6 @@
--- Custom test: Ensure no messages have future dates
+-- Test to ensure no messages have future dates
 SELECT 
     message_id,
-    channel_name,
-    message_date
+    post_timestamp
 FROM {{ ref('stg_telegram_messages') }}
-WHERE message_date > CURRENT_TIMESTAMP
+WHERE post_timestamp > CURRENT_TIMESTAMP
